@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"os/exec"
+	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
@@ -325,6 +326,22 @@ func getDiskTotalAndUsed() (total uint64, used uint64) {
 		if err == nil {
 			total += diskUsageOf.Total
 			used += diskUsageOf.Used
+		}
+	}
+
+	
+	// 使用命令行工具，精准的获取硬盘容量
+	diskCommand := exec.Command("fdisk", "-x")
+	diskInfo, diskErr := diskCommand.Output()
+	if diskErr == nil {
+		re := regexp.MustCompile(`Disk /dev/\w+: \d+ GiB, (\d+) bytes, \d+ sectors`)
+		match := re.FindStringSubmatch(string(diskInfo))
+		// 提取并打印匹配项中的字节大小
+		if len(match) > 1 {
+			bytesUint64, err := strconv.ParseUint(match[1], 10, 64)
+			if err == nil {
+				total = bytesUint64
+			}
 		}
 	}
 
